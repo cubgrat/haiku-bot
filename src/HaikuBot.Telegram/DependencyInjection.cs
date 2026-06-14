@@ -24,6 +24,7 @@ public static class DependencyInjection
                 return new TelegramBotClient(token, http);
             });
 
+        services.AddSingleton<InFlightTracker>();
         services.AddScoped<UpdateHandler>();
         services.AddHostedService<TelegramBotWorker>();
         return services;

@@ -6,4 +6,5 @@ public sealed record HaikuResult(
     string Text,
     int? Score,
     bool Approved,
-    int Attempts);
+    int Attempts,
+    long ElapsedMs);

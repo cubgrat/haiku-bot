@@ -16,4 +16,7 @@ public interface IHaikuService
 
     /// <summary>Отметить лайк и зафиксировать одобренное хайку. null — если генерация не найдена.</summary>
     Task<HaikuResult?> ApproveAsync(long generationId, long userId, CancellationToken ct);
+
+    /// <summary>История удачных (понравившихся, с 👍) хайку пользователя, свежие сверху.</summary>
+    Task<IReadOnlyList<HaikuHistoryItem>> GetLikedHistoryAsync(long userId, int limit, CancellationToken ct);
 }

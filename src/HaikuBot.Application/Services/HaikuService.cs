@@ -1,3 +1,4 @@
+using System.Diagnostics;
 using HaikuBot.Application.Configuration;
 using HaikuBot.Application.Dtos;
 using HaikuBot.Application.Ports.Inbound;
@@ -67,11 +68,20 @@ public sealed class HaikuService(
             UserId = userId
         }, ct);
 
-        return ToResult(generation, approved: true, attempts: generation.AttemptNumber);
+        return ToResult(generation, approved: true, attempts: generation.AttemptNumber, elapsedMs: 0);
+    }
+
+    public async Task<IReadOnlyList<HaikuHistoryItem>> GetLikedHistoryAsync(long userId, int limit, CancellationToken ct)
+    {
+        var generations = await repository.GetLikedGenerationsAsync(userId, limit, ct);
+        return generations
+            .Select(g => new HaikuHistoryItem(g.Text, g.CreatedAt, g.CriticScore))
+            .ToList();
     }
 
     private async Task<HaikuResult> RunPipelineAsync(HaikuRequest request, GenerationTrigger trigger, CancellationToken ct)
     {
+        var stopwatch = Stopwatch.StartNew();
         var maxAttempts = Math.Max(1, _options.MaxGenerationAttempts);
         HaikuGeneration? best = null;
         string? criticHint = null;
@@ -104,15 +114,15 @@ public sealed class HaikuService(
                 best = generation;
 
             if (approved)
-                return ToResult(generation, approved: true, attempt);
+                return ToResult(generation, approved: true, attempt, stopwatch.ElapsedMilliseconds);
 
             criticHint = verdict.Comment;
         }
 
         // Ни одна попытка не одобрена — отдаём лучшую по оценке.
-        return ToResult(best!, approved: false, maxAttempts);
+        return ToResult(best!, approved: false, maxAttempts, stopwatch.ElapsedMilliseconds);
     }
 
-    private static HaikuResult ToResult(HaikuGeneration generation, bool approved, int attempts) =>
-        new(generation.Id, generation.Text, generation.CriticScore, approved, attempts);
+    private static HaikuResult ToResult(HaikuGeneration generation, bool approved, int attempts, long elapsedMs) =>
+        new(generation.Id, generation.Text, generation.CriticScore, approved, attempts, elapsedMs);
 }
