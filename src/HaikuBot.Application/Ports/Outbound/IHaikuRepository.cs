@@ -17,4 +17,7 @@ public interface IHaikuRepository
     Task<HaikuRequest?> GetRequestAsync(long requestId, CancellationToken ct);
 
     Task<HaikuGeneration?> GetGenerationAsync(long generationId, CancellationToken ct);
+
+    /// <summary>Генерации, которые пользователь отметил лайком (👍), свежие сверху.</summary>
+    Task<IReadOnlyList<HaikuGeneration>> GetLikedGenerationsAsync(long userId, int limit, CancellationToken ct);
 }

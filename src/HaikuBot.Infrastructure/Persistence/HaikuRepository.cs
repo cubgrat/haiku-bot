@@ -44,4 +44,28 @@ public sealed class HaikuRepository(AppDbContext db) : IHaikuRepository
         var entity = await db.Generations.AsNoTracking().FirstOrDefaultAsync(x => x.Id == generationId, ct);
         return entity?.ToDomain();
     }
+
+    public async Task<IReadOnlyList<HaikuGeneration>> GetLikedGenerationsAsync(long userId, int limit, CancellationToken ct)
+    {
+        // Уникальные генерации с лайком пользователя, отсортированные по последнему лайку.
+        var ordered = await db.Feedbacks
+            .AsNoTracking()
+            .Where(f => f.UserId == userId && f.Type == FeedbackType.Like)
+            .GroupBy(f => f.GenerationId)
+            .Select(g => new { GenerationId = g.Key, LastLikedAt = g.Max(f => f.CreatedAt) })
+            .OrderByDescending(x => x.LastLikedAt)
+            .Take(limit)
+            .ToListAsync(ct);
+
+        var ids = ordered.Select(x => x.GenerationId).ToList();
+        var generations = await db.Generations
+            .AsNoTracking()
+            .Where(g => ids.Contains(g.Id))
+            .ToListAsync(ct);
+
+        // Сохраняем порядок «свежие лайки сверху».
+        return ids
+            .Select(id => generations.First(g => g.Id == id).ToDomain())
+            .ToList();
+    }
 }
