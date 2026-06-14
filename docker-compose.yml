@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:17-alpine
+    container_name: haiku-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-haiku}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-haiku}
+      POSTGRES_DB: ${POSTGRES_DB:-haiku}
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-haiku} -d ${POSTGRES_DB:-haiku}"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+    # Порт наружу для отладки; в проде можно убрать.
+    ports:
+      - "5432:5432"
+
+  bot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: haiku-bot
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Строка подключения к Postgres внутри сети compose.
+      ConnectionStrings__Postgres: "Host=postgres;Port=5432;Database=${POSTGRES_DB:-haiku};Username=${POSTGRES_USER:-haiku};Password=${POSTGRES_PASSWORD:-haiku}"
+      # Telegram
+      Bot__Token: ${BOT_TOKEN}
+      # Пайплайн генерации/оценки
+      Pipeline__MaxGenerationAttempts: ${MAX_GENERATION_ATTEMPTS:-3}
+      Pipeline__ApprovalThreshold: ${APPROVAL_THRESHOLD:-7}
+      # Нейросети: Mock (тестовый этап) или OpenAiCompatible
+      Llm__Provider: ${LLM_PROVIDER:-Mock}
+      Llm__BaseUrl: ${LLM_BASE_URL:-https://openrouter.ai/api/v1}
+      Llm__ApiKey: ${LLM_API_KEY:-}
+      Llm__GeneratorModel: ${LLM_GENERATOR_MODEL:-meta-llama/llama-3.3-70b-instruct:free}
+      Llm__JudgeModel: ${LLM_JUDGE_MODEL:-google/gemini-2.0-flash-exp:free}
+
+volumes:
+  pgdata:

@@ -1,0 +1,9 @@
+<Solution>
+  <Folder Name="/src/">
+    <Project Path="src/HaikuBot.Application/HaikuBot.Application.csproj" />
+    <Project Path="src/HaikuBot.Domain/HaikuBot.Domain.csproj" />
+    <Project Path="src/HaikuBot.Host/HaikuBot.Host.csproj" />
+    <Project Path="src/HaikuBot.Infrastructure/HaikuBot.Infrastructure.csproj" />
+    <Project Path="src/HaikuBot.Telegram/HaikuBot.Telegram.csproj" />
+  </Folder>
+</Solution>
