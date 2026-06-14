@@ -1,0 +1,12 @@
+# Секреты
+.env
+
+# .NET build
+bin/
+obj/
+*.user
+
+# IDE
+.vs/
+.idea/
+*.DotSettings.user
